@@ -9,6 +9,7 @@
 
 + (void) runAllTests {
     [self testRFC6979];
+    [self testSegWitScriptHashAddressesCreation];
     [self testDiffieHellman];
     [self testCanonicality];
     [self testRandomKeys];
@@ -105,6 +106,34 @@
         }
     }
 
+}
+
++ (void) testSegWitScriptHashAddressesCreation
+{
+    {
+        BTCKey* key = [[BTCKey alloc] initWithWIF:@"cQququJtLxiHNm4HAUL87uNokJfhUp6S8KPJ4qo98KzwHhECR9yZ"];
+        NSAssert([[[key witnessAddressTestnet] string] isEqualToString:@"2NEJTVF8rwJ2xXboHZQh9xTe9AziSQZvhN1"], @"");
+    }
+    
+    {
+        BTCKey* key = [[BTCKey alloc] initWithWIF:@"cMtcbWeRsEsJqrFn8cowiUjkd8qEHUf76cjEWg84mBm3PJaUfqPS"];
+        NSAssert([[[key witnessAddressTestnet] string] isEqualToString:@"2MvBGs77YpmPJHSzzwhE9HUb6KrRczg46jR"], @"");
+    }
+    
+    {
+        BTCKey* key = [[BTCKey alloc] initWithWIF:@"cVsHjhWRwN8CUryhiSJWv9mKEeQAxFbVixELtCHFcPEEaV97SuXJ"];
+        NSAssert([[[key witnessAddressTestnet] string] isEqualToString:@"2N9Q2hideqGbsvQqfHQRq3RqmbXFTypzkiQ"], @"");
+    }
+    
+    {
+        BTCKey* key = [[BTCKey alloc] initWithWIF:@"cPsXmqnxdPCuGWLgCjm73ZGPwy7R34g2WeUUSS6GbKq6PjaVWrdj"];
+        NSAssert([[[key witnessAddressTestnet] string] isEqualToString:@"2NAZM2HgF666p3ziJQmq7GgTLjrzGHC9XdL"], @"");
+    }
+    
+    {
+        BTCKey* key = [[BTCKey alloc] initWithWIF:@"KzFi9c5RNvJL1Dn88tp7hTVMU25tVb5BpXn2a8Dq8XkfpbghggSL"];
+        NSAssert([[[key witnessAddress] string] isEqualToString:@"38ySuLLR8E1YRZYaUfsGSUqf7D5Yzeno2C"], @"");
+    }
 }
 
 + (void) testRandomKeys {

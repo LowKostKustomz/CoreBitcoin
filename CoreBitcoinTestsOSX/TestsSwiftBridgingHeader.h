@@ -1,3 +1,3 @@
 
 #import "SwiftBridgingHeader.h"
-#import "BTCScriptTestData.h"
+#import "BTCScriptTestData+Tests.h"

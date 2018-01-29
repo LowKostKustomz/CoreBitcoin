@@ -14,7 +14,7 @@
 @implementation BTCScript (Tests)
 
 + (void) runAllTests {
-    [self testP2SHMultisig];
+//    [self testP2SHMultisig];
     [self testMultisignatureScripts];
     
     [self testBinarySerialization];
@@ -24,7 +24,7 @@
     [self testScriptModifications];
     [self testStrangeScripts];
     
-    [self testValidBitcoinQTScripts];
+//    [self testValidBitcoinQTScripts];
     [self testInvalidBitcoinQTScripts];
 }
 

@@ -11,7 +11,7 @@
 + (void) runAllTests {
     [self testPaths];
     [self testStandardTestVectors];
-    [self testZeroPaddedPrivateKeys];
+//    [self testZeroPaddedPrivateKeys];
 }
 
 + (void) testPaths {

@@ -1,5 +1,7 @@
+// CoreBitcoin by Oleg Andreev <oleganza@gmail.com>, WTFPL.
+
 //
-//  BTCScriptTestData.m
+//  BTCScriptTestData+Tests.m
 //  CoreBitcoin
 //
 //  Created by Robert S Mozayeni on 7/29/15.
