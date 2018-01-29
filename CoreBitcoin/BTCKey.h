@@ -8,6 +8,9 @@
 @class BTCPublicKeyAddressTestnet;
 @class BTCPrivateKeyAddress;
 @class BTCPrivateKeyAddressTestnet;
+@class BTCScriptHashAddressTestnet;
+@class BTCScriptHashAddress;
+@class BTCScript;
 
 // BTCKey encapsulates EC public and private keypair (or only public part) on curve secp256k1.
 // You can sign data and verify signatures.
@@ -101,8 +104,15 @@
 @property(nonatomic, readonly) BTCPublicKeyAddressTestnet* addressTestnet;
 
 // Returns address for a public key (Hash160(pubkey)).
-@property(nonatomic, readonly) BTCPublicKeyAddress* uncompressedPublicKeyAddress;
 @property(nonatomic, readonly) BTCPublicKeyAddress* compressedPublicKeyAddress;
+@property(nonatomic, readonly) BTCPublicKeyAddress* uncompressedPublicKeyAddress;
+@property(nonatomic, readonly) BTCPublicKeyAddressTestnet* compressedPublicKeyAddressTestnet;
+@property(nonatomic, readonly) BTCPublicKeyAddressTestnet* uncompressedPublicKeyAddressTestnet;
+
+// Returns segwit address for a public key (Hash160(OP_0 Hash160(compressedPubKey))).
+@property(nonatomic, readonly) BTCScriptHashAddress* witnessAddress;
+@property(nonatomic, readonly) BTCScriptHashAddressTestnet* witnessAddressTestnet;
+@property(nonatomic, readonly) BTCScript* witnessRedeemScript;
 
 // Private key encoded in sipa format (base58 with compression flag).
 @property(nonatomic, readonly) BTCPrivateKeyAddress* privateKeyAddress;

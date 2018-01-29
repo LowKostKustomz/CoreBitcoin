@@ -3,8 +3,11 @@
 #import <Foundation/Foundation.h>
 #import "BTCUnitsAndLimits.h"
 #import "BTCSignatureHashType.h"
+#import "BTCAddress.h"
 
 static const uint32_t BTCTransactionCurrentVersion = 1;
+static const uint32_t BTCTransactionCurrentMarker = 0;
+static const uint32_t BTCTransactionCurrentFlag = 1;
 static const BTCAmount BTCTransactionDefaultFeeRate = 10000; // 10K satoshis per 1000 bytes
 
 
@@ -32,16 +35,18 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) DEPRECATED_ATTRIBUTE;
 // Raw transaction hash SHA256(SHA256(payload))
 @property(nonatomic, readonly) NSData* transactionHash;
 
-/*!
- * Hex representation of reversed `-transactionHash`.
- * This property is deprecated. Use `-transactionID` instead.
- */
-@property(nonatomic, readonly) NSString* displayTransactionHash DEPRECATED_ATTRIBUTE;
+// Raw transaction hash SHA256(SHA256(payload))
+@property(nonatomic, readonly) NSData* witnessTransactionHash;
 
 /*!
  * Hex representation of reversed `-transactionHash`. Also known as "txid".
  */
 @property(nonatomic, readonly) NSString* transactionID;
+
+/*!
+ * Hex representation of reversed `-witnessTransactionHash`. Also known as "wtxid".
+ */
+@property(nonatomic, readonly) NSString* witnessTransactionID;
 
 // Array of BTCTransactionInput objects
 @property(nonatomic) NSArray* inputs;
@@ -52,6 +57,12 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) DEPRECATED_ATTRIBUTE;
 // Version. Default is 1.
 @property(nonatomic) uint32_t version;
 
+// Version. Default is 0.
+@property(nonatomic) uint32_t marker;
+
+// Version. Default is 1.
+@property(nonatomic) uint32_t flag;
+
 // Lock time. Either a block height or a unix timestamp.
 // Default is 0.
 @property(nonatomic) uint32_t lockTime; // aka "lock_time"
@@ -61,6 +72,12 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) DEPRECATED_ATTRIBUTE;
 
 // Binary representiation in hex.
 @property(nonatomic, readonly) NSString* hex;
+
+// Binary representation on tx ready to be sent over the wire (aka "payload")
+@property(nonatomic, readonly) NSData* witnessTransactionData;
+
+// Binary representiation in hex.
+@property(nonatomic, readonly) NSString* witnessTransactionHex;
 
 
 // Informational properties
@@ -123,6 +140,8 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) DEPRECATED_ATTRIBUTE;
 
 // Constructs transaction from its dictionary representation
 - (id) initWithDictionary:(NSDictionary*)dictionary;
+
+- (NSData*) computeSignatureHashForWitnessWithHashType:(BTCSignatureHashType)hashType inputIndex:(NSUInteger) index;
 
 // Hash for signing a transaction.
 // You should supply the output script of the previous transaction, desired hash type and input index in this transaction.

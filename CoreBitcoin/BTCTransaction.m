@@ -2,6 +2,7 @@
 
 #import "BTCTransaction.h"
 #import "BTCTransactionInput.h"
+#import "BTCOutpoint.h"
 #import "BTCTransactionOutput.h"
 #import "BTCProtocolSerialization.h"
 #import "BTCData.h"
@@ -26,6 +27,8 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) {
     if (self = [super init]) {
         // init default values
         _version = BTCTransactionCurrentVersion;
+        _marker = BTCTransactionCurrentMarker;
+        _flag = BTCTransactionCurrentFlag;
         _lockTime = 0;
         _inputs = @[];
         _outputs = @[];
@@ -153,12 +156,16 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) {
     return BTCHash256(self.data);
 }
 
-- (NSString*) displayTransactionHash { // deprecated
-    return self.transactionID;
+- (NSData*) witnessTransactionHash {
+    return BTCHash256(self.witnessTransactionData);
 }
 
 - (NSString*) transactionID {
     return BTCIDFromHash(self.transactionHash);
+}
+
+- (NSString*) witnessTransactionID {
+    return BTCIDFromHash(self.witnessTransactionHash);
 }
 
 - (NSString*) blockID {
@@ -207,6 +214,169 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) {
     return payload;
 }
 
+- (NSData*) witnessTransactionData {
+    return [self computeWitnessPayload];
+}
+
+- (NSString*) witnessTransactionHex {
+    return BTCHexFromData(self.witnessTransactionData);
+}
+
+- (NSData*) computeWitnessPayload {
+    NSMutableData* payload = [NSMutableData data];
+    
+    // 4-byte version
+    uint32_t ver = _version;
+    [payload appendBytes:&ver length:4];
+    
+    // Checking if transaction contains at least one input with non-null witness data
+    BOOL isSegWit = [self isSegWit];
+    
+    // Adding special segwit fields to serialized transaction
+    if (isSegWit) {
+        // 1-byte marker
+        uint32_t marker = _marker;
+        [payload appendBytes:&marker length:1];
+        
+        // 1-byte flag
+        uint32_t flag = _flag;
+        [payload appendBytes:&flag length:1];
+    }
+    
+    // varint with number of inputs
+    [payload appendData:[BTCProtocolSerialization dataForVarInt:_inputs.count]];
+    
+    // input payloads
+    for (BTCTransactionInput* input in _inputs) {
+        [payload appendData:input.data];
+    }
+    
+    // varint with number of outputs
+    [payload appendData:[BTCProtocolSerialization dataForVarInt:_outputs.count]];
+    
+    // output payloads
+    for (BTCTransactionOutput* output in _outputs) {
+        [payload appendData:output.data];
+    }
+    
+    // Adding witness data to serialized transaction
+    if (isSegWit) {
+        for (BTCTransactionInput* input in _inputs) {
+            if (input.witnessData) {
+                [payload appendData:[BTCProtocolSerialization dataForVarInt:input.witnessData.scriptChunks.count]];
+
+                for (BTCScriptChunk* chunk in input.witnessData.scriptChunks) {
+                    NSData* data;
+                    
+                    if (chunk.isOpcode) {
+                        unsigned char opcode = chunk.opcode;
+                        [payload appendBytes:&opcode length:1];
+                    } else {
+                        data = chunk.pushdata;
+                    }
+                    
+                    if (data) {
+                        [payload appendData:[BTCProtocolSerialization dataForVarInt:[data length]]];
+                        [payload appendData:data];
+                    }
+                }
+            } else {
+                uint32_t emptyWitnessDataBytes = 0;
+                [payload appendBytes:&emptyWitnessDataBytes length:1];
+            }
+        }
+    }
+    
+    // 4-byte lock_time
+    uint32_t lt = _lockTime;
+    [payload appendBytes:&lt length:4];
+    
+    return payload;
+}
+
+- (BOOL) isSegWit {
+    for (BTCTransactionInput* input in _inputs) {
+        if (input.witnessData) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+- (NSData*) computeSignatureHashForWitnessWithHashType:(BTCSignatureHashType)hashType inputIndex:(NSUInteger) index {
+    
+    NSMutableData* payload = [NSMutableData data];
+    
+    BOOL anyoneCanPay = hashType & SIGHASH_ANYONECANPAY;
+    BOOL sighashSingle = (hashType & SIGHASH_OUTPUT_MASK) == SIGHASH_SINGLE;
+    BOOL sighashNone = (hashType & SIGHASH_OUTPUT_MASK) == SIGHASH_NONE;
+    
+    // 4-byte version (nVersion)
+    uint32_t ver = _version;
+    [payload appendBytes:&ver length:4];
+    
+    // hashPrevouts
+    if (anyoneCanPay) {
+        [payload appendData:BTCZero256()];
+    } else {
+        // Double SHA256 of the serialization of all input outpoints
+        NSMutableData* prevouts = [[NSMutableData alloc] init];
+        for (BTCTransactionInput* input in _inputs) {
+            [prevouts appendData:input.outpoint.outpointData];
+        }
+        [payload appendData:BTCHash256(prevouts)];
+    }
+    
+    // hashSequence
+    if (!anyoneCanPay && !sighashSingle && !sighashNone) {
+        // Double SHA256 of the serialization of all input nSequence
+        NSMutableData* sequence = [[NSMutableData alloc] init];
+        for (BTCTransactionInput* input in _inputs) {
+            uint32_t seq = input.sequence;
+            [sequence appendBytes:&seq length:sizeof(seq)];
+        }
+        [payload appendData:BTCHash256(sequence)];
+    } else {
+        [payload appendData:BTCZero256()];
+    }
+    
+    BTCTransactionInput* input = _inputs[index];
+    // outpoint
+    [payload appendData:input.outpoint.outpointData];
+    
+    // scriptCode
+    NSData* scriptData = input.signatureScript.data;
+    [payload appendData:[BTCProtocolSerialization dataForVarInt:scriptData.length]];
+    [payload appendData:scriptData];
+    
+    // amount
+    BTCAmount amount = input.value;
+    [payload appendBytes:&amount length:sizeof(amount)];
+    
+    // nSequence
+    uint32_t sequence = input.sequence;
+    [payload appendBytes:&sequence length:sizeof(sequence)];
+    
+    // hashOutputs
+    if (!sighashSingle && !sighashNone) {
+        NSMutableData* outputs = [[NSMutableData alloc] init];
+        for (BTCTransactionOutput* output in _outputs) {
+            [outputs appendData:output.data];
+        }
+        [payload appendData:BTCHash256(outputs)];
+    } else if (sighashSingle && index < _outputs.count) {
+        BTCTransactionOutput* output = _outputs[index];
+        [payload appendData:BTCHash256(output.data)];
+    } else {
+        [payload appendData:BTCZero256()];
+    }
+    
+    // nLockTime
+    uint32_t lt = _lockTime;
+    [payload appendBytes:&lt length:4];
+    
+    return payload;
+}
 
 #pragma mark - Methods
 
@@ -429,7 +599,14 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) {
     
     // Important: we have to hash transaction together with its hash type.
     // Hash type is appended as little endian uint32 unlike 1-byte suffix of the signature.
-    NSMutableData* fulldata = [tx.data mutableCopy];
+    NSMutableData* fulldata;
+    
+    if ([self isSegWit]) {
+        fulldata = [[tx computeSignatureHashForWitnessWithHashType:hashType inputIndex:inputIndex] mutableCopy];
+    } else {
+        fulldata = [tx.data mutableCopy];
+    }
+    
     uint32_t hashType32 = OSSwapHostToLittleInt32((uint32_t)hashType);
     [fulldata appendBytes:&hashType32 length:sizeof(hashType32)];
     

@@ -7,6 +7,8 @@
 #import "BTCBigNumber.h"
 #import "BTCProtocolSerialization.h"
 #import "BTCErrors.h"
+#import "BTCScript.h"
+#import "BTCOpcode.h"
 #include <CommonCrypto/CommonCrypto.h>
 #include <openssl/ec.h>
 #include <openssl/ecdsa.h>
@@ -555,11 +557,49 @@ static int     ECDSA_SIG_recover_key_GFp(EC_KEY *eckey, ECDSA_SIG *ecsig, const 
     return [BTCPublicKeyAddress addressWithData:BTCHash160(pubkey)];
 }
 
+- (BTCPublicKeyAddressTestnet*) compressedPublicKeyAddressTestnet {
+    CHECK_IF_CLEARED;
+    NSData* pubkey = [self compressedPublicKey];
+    if (pubkey.length == 0) return nil;
+    return [BTCPublicKeyAddressTestnet addressWithData:BTCHash160(pubkey)];
+}
+
+- (BTCScriptHashAddressTestnet*) witnessAddressTestnet {
+    BTCScript* redeemScript = [self witnessRedeemScript];
+    return [redeemScript scriptHashAddressTestnet];
+}
+
+- (BTCScriptHashAddress*) witnessAddress {
+    BTCScript* redeemScript = [self witnessRedeemScript];
+    return [redeemScript scriptHashAddress];
+}
+
+- (BTCScript*) witnessRedeemScript {
+    CHECK_IF_CLEARED;
+    NSData* pubkey = [self compressedPublicKey];
+    if (pubkey.length == 0) return nil;
+    NSData* pubKeyHash = BTCHash160(pubkey);
+    BTCScript* redeemScript = [[BTCScript alloc] init];
+    [redeemScript appendOpcode:OP_0];
+    [redeemScript appendData:pubKeyHash];
+    // The P2SH redeemScript is always 22 bytes.
+    // It starts with a OP_0, followed by a canonical push of the keyhash (i.e. 0x0014{20-byte keyhash})
+    if (redeemScript.data.length != 22) return nil;
+    return redeemScript;
+}
+
 - (BTCPublicKeyAddress*) uncompressedPublicKeyAddress {
     CHECK_IF_CLEARED;
     NSData* pubkey = [self uncompressedPublicKey];
     if (pubkey.length == 0) return nil;
     return [BTCPublicKeyAddress addressWithData:BTCHash160(pubkey)];
+}
+
+- (BTCPublicKeyAddressTestnet*) uncompressedPublicKeyAddressTestnet {
+    CHECK_IF_CLEARED;
+    NSData* pubkey = [self uncompressedPublicKey];
+    if (pubkey.length == 0) return nil;
+    return [BTCPublicKeyAddressTestnet addressWithData:BTCHash160(pubkey)];
 }
 
 - (BTCPrivateKeyAddress*) privateKeyAddress {
