@@ -458,6 +458,52 @@
         && [self opcodeAtIndex:4] == OP_CHECKSIG;
 }
 
+- (BOOL) isPayToScriptHashPayToWitnessScriptHashInputScript {
+    if (_chunks.count != 1) return NO;
+    
+    BTCScriptChunk* dataChunk = [self chunkAtIndex:0];
+    
+    if (dataChunk.isOpcode) return NO;
+    
+    BTCScript* witnessScript = [[BTCScript alloc] initWithData:[dataChunk pushdata]];
+    
+    if (!witnessScript) return NO;
+    
+    return [witnessScript isWitnessMutlisigScript];
+}
+
+- (BOOL) isPayToScriptHashPayToWitnessPublicKeyHashInputScript {
+    if (_chunks.count != 1) return NO;
+    
+    BTCScriptChunk* dataChunk = [self chunkAtIndex:0];
+    
+    if (dataChunk.isOpcode) return NO;
+    
+    BTCScript* witnessScript = [[BTCScript alloc] initWithData:[dataChunk pushdata]];
+    
+    if (!witnessScript) return NO;
+    
+    return [witnessScript isWitnessPublicKeyScript];
+}
+
+- (BOOL) isWitnessPublicKeyScript {
+    BTCScriptChunk* opcode = [self chunkAtIndex:0];
+    BTCScriptChunk* dataChunk = [self chunkAtIndex:1];
+    
+    return opcode.opcode == OP_0
+        && !dataChunk.isOpcode
+        && dataChunk.range.length == 21;
+}
+
+- (BOOL) isWitnessMutlisigScript {
+    BTCScriptChunk* opcode = [self chunkAtIndex:0];
+    BTCScriptChunk* dataChunk = [self chunkAtIndex:1];
+    
+    return opcode.opcode == OP_0
+    && !dataChunk.isOpcode
+    && dataChunk.range.length == 33;
+}
+
 - (BOOL) isPayToScriptHashScript {
     // TODO: check against the original serialized form instead of parsed chunks because BIP16 defines
     // P2SH script as an exact byte template. Scripts using OP_PUSHDATA1/2/4 are not valid P2SH scripts.

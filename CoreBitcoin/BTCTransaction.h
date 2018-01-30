@@ -36,6 +36,7 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) DEPRECATED_ATTRIBUTE;
 @property(nonatomic, readonly) NSData* transactionHash;
 
 // Raw transaction hash SHA256(SHA256(payload))
+// Same as transactionHash if transaction has no input with witness
 @property(nonatomic, readonly) NSData* witnessTransactionHash;
 
 /*!
@@ -45,6 +46,7 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) DEPRECATED_ATTRIBUTE;
 
 /*!
  * Hex representation of reversed `-witnessTransactionHash`. Also known as "wtxid".
+ * Same as transactionID if transaction has no input with witness
  */
 @property(nonatomic, readonly) NSString* witnessTransactionID;
 
@@ -73,11 +75,11 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) DEPRECATED_ATTRIBUTE;
 // Binary representiation in hex.
 @property(nonatomic, readonly) NSString* hex;
 
-// Binary representation on tx ready to be sent over the wire (aka "payload")
-@property(nonatomic, readonly) NSData* witnessTransactionData;
+// Binary representation on tx with witness ready to be sent over the wire (aka "payload")
+@property(nonatomic, readonly) NSData* dataWithWitness;
 
-// Binary representiation in hex.
-@property(nonatomic, readonly) NSString* witnessTransactionHex;
+// Binary representiation in hex with witness.
+@property(nonatomic, readonly) NSString* hexWithWitness;
 
 
 // Informational properties
@@ -145,7 +147,7 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) DEPRECATED_ATTRIBUTE;
 
 // Hash for signing a transaction.
 // You should supply the output script of the previous transaction, desired hash type and input index in this transaction.
-- (NSData*) signatureHashForScript:(BTCScript*)subscript inputIndex:(uint32_t)inputIndex hashType:(BTCSignatureHashType)hashType error:(NSError**)errorOut;
+- (NSData*) signatureHashForScript:(BTCScript*)subscript forSegWit:(BOOL) isSegWit inputIndex:(uint32_t)inputIndex hashType:(BTCSignatureHashType)hashType error:(NSError**)errorOut;
 
 // Adds input script
 - (void) addInput:(BTCTransactionInput*)input;

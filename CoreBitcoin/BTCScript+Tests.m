@@ -82,7 +82,7 @@
     // 3. Sign the redeeming transaction.
     
     BTCSignatureHashType hashtype = BTCSignatureHashTypeAll;
-    NSData* hash = [dstTx signatureHashForScript:srcTxOut.script inputIndex:0 hashType:hashtype error:NULL];
+    NSData* hash = [dstTx signatureHashForScript:srcTxOut.script forSegWit: NO inputIndex:0 hashType:hashtype error:NULL];
     
     NSAssert(hash, @"sanity check");
     

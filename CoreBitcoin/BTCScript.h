@@ -101,6 +101,10 @@ typedef NS_ENUM(NSInteger, BTCScriptSimulationOptions) {
 // P2SH base58-encoded addresses start with "3" (e.g. "3NukJ6fYZJ5Kk8bPjycAnruZkE5Q7UW7i8").
 @property(nonatomic, readonly) BOOL isPayToScriptHashScript;
 
+@property(nonatomic, readonly) BOOL isPayToScriptHashPayToWitnessPublicKeyHashInputScript;
+
+@property(nonatomic, readonly) BOOL isPayToScriptHashPayToWitnessScriptHashInputScript;
+
 // Returns YES if the script is "<M> <pubkey1> ... <pubkeyN> <N> OP_CHECKMULTISIG" where N is up to 3.
 // Scripts with up to 3 signatures are considered standard and relayed quickly, but you can create more complex ones.
 @property(nonatomic, readonly) BOOL isStandardMultisignatureScript;

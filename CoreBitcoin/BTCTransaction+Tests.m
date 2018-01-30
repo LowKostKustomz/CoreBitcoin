@@ -404,7 +404,7 @@ typedef enum : NSUInteger {
         
         BTCSignatureHashType hashtype = BTCSignatureHashTypeAll;
         
-        NSData* hash = [tx signatureHashForScript:txout.script inputIndex:i hashType:hashtype error:errorOut];
+        NSData* hash = [tx signatureHashForScript:txout.script forSegWit: NO inputIndex:i hashType:hashtype error:errorOut];
         
         NSData* d2 = tx.data;
         
@@ -446,9 +446,13 @@ typedef enum : NSUInteger {
     BTCKey* key = [[BTCKey alloc] initWithPrivateKey:BTCDataFromHex(@"eb696a065ef48a2192da5b28b694f87544b30fae8327c4510137a922f32c6dcf")];
     BTCScript* script = [[BTCScript alloc] initWithAddress:[key compressedPublicKeyAddress]];
     
+    BTCScript* signatureScript = [[BTCScript alloc] init];
+    [signatureScript appendData:[key.witnessRedeemScript data]];
+    NSLog(@"%d", [signatureScript isPayToScriptHashPayToWitnessPublicKeyHashInputScript]);
+    
     BTCTransaction* tx = [[BTCTransaction alloc] initWithHex:@"0100000001db6b1b20aa0fd7b23880be2ecbd4a98130974cf4748fb66092ac4d3ceb1a54770100000000feffffff02b8b4eb0b000000001976a914a457b684d7f0d539a46a45bbc043f35b59d0d96388ac0008af2f000000001976a914fd270b1ee6abcaea97fea7ad0402e8bd8ad6d77c88ac92040000"];
     [((BTCTransactionInput*)tx.inputs[0]) setValue:1000000000];
-    NSData* signatureHash = [tx signatureHashForScript:script inputIndex:0 hashType:SIGHASH_ALL error:NULL];
+    NSData* signatureHash = [tx signatureHashForScript:script forSegWit: NO inputIndex:0 hashType:SIGHASH_ALL error:NULL];
     NSData* signature = [key signatureForHash:signatureHash hashType:SIGHASH_ALL];
 }
 
